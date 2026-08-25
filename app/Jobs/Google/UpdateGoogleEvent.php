@@ -1,0 +1,32 @@
+<?php
+
+namespace App\Jobs\Google;
+
+use App\Models\Meeting;
+use App\Services\Google\GoogleCalendarService;
+use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Foundation\Bus\Dispatchable;
+use Illuminate\Queue\InteractsWithQueue;
+use Illuminate\Queue\SerializesModels;
+
+class UpdateGoogleEvent implements ShouldQueue
+{
+    use Dispatchable, InteractsWithQueue, Queueable, ResolvesGoogleContext, SerializesModels;
+
+    public int $tries = 3;
+
+    public function __construct(public int $meetingId) {}
+
+    public function handle(GoogleCalendarService $calendar): void
+    {
+        $this->withMeeting($this->meetingId, function (Meeting $meeting) use ($calendar) {
+            if (! $meeting->google_event_id) {
+                return;
+            }
+            if ($account = $this->googleAccountFor($meeting)) {
+                $calendar->updateEvent($account, $meeting);
+            }
+        });
+    }
+}
