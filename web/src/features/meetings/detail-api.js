@@ -1,10 +1,11 @@
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
-export function useMeeting(id) {
+export function useMeeting(id, options = {}) {
     return useQuery({
         queryKey: ["meeting", id],
         queryFn: async () => (await api.get(`/v1/meetings/${id}`)).data,
         select: (d) => ("data" in d ? d.data : d),
+        ...options,
     });
 }
 /** Polls while processing is in-flight; stops once terminal. */
@@ -41,6 +42,13 @@ export function useActionItems(id, enabled) {
         queryKey: ["actions", id],
         enabled,
         queryFn: async () => (await api.get(`/v1/meetings/${id}/actions`)).data,
+    });
+}
+export function useMeetingBrief(id, enabled = true) {
+    return useQuery({
+        queryKey: ["brief", id],
+        enabled: Boolean(id) && enabled,
+        queryFn: async () => (await api.get(`/v1/meetings/${id}/brief`)).data,
     });
 }
 export function useMom(id, enabled) {

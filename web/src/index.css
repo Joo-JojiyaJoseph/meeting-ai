@@ -11,9 +11,8 @@
     text-rendering: optimizeLegibility;
   }
   body {
-    @apply bg-canvas text-ink font-sans antialiased;
+    @apply bg-canvas bg-mesh bg-fixed text-ink font-sans antialiased;
   }
-  /* Accessibility: honor reduced-motion (§50). */
   @media (prefers-reduced-motion: reduce) {
     *,
     *::before,
@@ -24,8 +23,25 @@
   }
 }
 
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: none; }
+}
+
 @layer components {
   .focus-ring {
-    @apply outline-none focus-visible:ring-2 focus-visible:ring-brand-500/50 focus-visible:ring-offset-1;
+    @apply outline-none focus-visible:ring-2 focus-visible:ring-brand-500/40 focus-visible:ring-offset-2;
+  }
+  .field {
+    @apply focus-ring min-h-10 w-full rounded-xl border border-line bg-surface px-3 py-2 text-sm text-ink shadow-sm transition-shadow placeholder:text-ink-soft/80 hover:border-brand-200 focus-visible:border-brand-400;
+  }
+  .page-enter {
+    animation: fade-up 0.4s ease-out both;
+  }
+  .modal-scrim {
+    @apply fixed inset-0 z-50 flex items-center justify-center bg-ink/40 px-4 backdrop-blur-sm;
+  }
+  .modal-panel {
+    @apply w-full max-w-lg space-y-5 rounded-2xl border border-white/60 bg-surface p-6 shadow-pop;
   }
 }

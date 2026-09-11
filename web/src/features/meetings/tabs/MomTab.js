@@ -25,7 +25,10 @@ export function MomTab({ meetingId }) {
     });
     const publish = useMutation({
         mutationFn: async () => api.post(`/v1/meetings/${meetingId}/mom/publish`),
-        onSuccess: () => qc.invalidateQueries({ queryKey: ["mom", meetingId] }),
+        onSuccess: () => {
+            qc.invalidateQueries({ queryKey: ["mom", meetingId] });
+            qc.invalidateQueries({ queryKey: ["notifications"] });
+        },
     });
     if (isLoading)
         return _jsx(Skeleton, { className: "h-72 rounded-2xl" });

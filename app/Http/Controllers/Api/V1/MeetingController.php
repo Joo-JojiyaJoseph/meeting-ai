@@ -11,6 +11,7 @@ use App\Http\Resources\MeetingResource;
 use App\Jobs\Google\CancelGoogleEvent;
 use App\Jobs\Google\UpdateGoogleEvent;
 use App\Models\Meeting;
+use App\Services\Notifications\NotificationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -41,7 +42,7 @@ class MeetingController extends Controller
                         ->orWhereHas('user', fn ($u) => $u->where('name', 'like', "%{$term}%")));
             }))
             ->orderByDesc('scheduled_start_at')
-            ->paginate(20)
+            ->paginate(min(max($request->integer('per_page', 20), 1), 100))
             ->withQueryString();
 
         return MeetingResource::collection($meetings);
@@ -53,6 +54,13 @@ class MeetingController extends Controller
 
         $meeting = $action->handle($request->user(), $request->validated());
 
+        app(NotificationService::class)->notifyMeetingParticipants($meeting, 'meeting.scheduled', [
+            'title' => 'Meeting scheduled',
+            'body' => $meeting->title.' was added to the calendar.',
+            'url' => '/meetings/'.$meeting->ulid,
+            'meeting_id' => $meeting->ulid,
+        ], $request->user()->id);
+
         return (new MeetingResource($meeting))->response()->setStatusCode(201);
     }
 
@@ -62,7 +70,7 @@ class MeetingController extends Controller
 
         return new MeetingResource(
             $meeting->load(['organizer', 'project', 'department', 'participants.user', 'agendaItems'])
-                ->loadCount(['participants', 'actionItems', 'decisions'])
+                ->loadCount(['participants', 'actionItems', 'decisions', 'pendingJoinRequests'])
         );
     }
 
@@ -85,6 +93,13 @@ class MeetingController extends Controller
         $this->authorize('update', $meeting);
 
         $meeting->update(['status' => MeetingStatus::Cancelled]);
+
+        app(NotificationService::class)->notifyMeetingParticipants($meeting, 'meeting.cancelled', [
+            'title' => 'Meeting cancelled',
+            'body' => $meeting->title.' was cancelled.',
+            'url' => '/meetings/'.$meeting->ulid,
+            'meeting_id' => $meeting->ulid,
+        ], request()->user()?->id);
 
         if ($meeting->google_event_id) {
             CancelGoogleEvent::dispatch($meeting->id, $meeting->google_event_id);

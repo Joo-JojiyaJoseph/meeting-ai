@@ -16,6 +16,8 @@ class ParticipantResource extends JsonResource
             'guest_email' => $this->guest_email,
             'role_in_meeting' => $this->role_in_meeting,
             'response_status' => $this->response_status,
+            'join_status' => $this->join_status,
+            'join_requested_at' => $this->join_requested_at,
             'is_organizer' => (bool) $this->is_organizer,
             'attended' => $this->attended,
         ];

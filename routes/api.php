@@ -14,11 +14,14 @@ use App\Http\Controllers\Api\V1\MeetingAgendaController;
 use App\Http\Controllers\Api\V1\MeetingArtifactController;
 use App\Http\Controllers\Api\V1\MeetingController;
 use App\Http\Controllers\Api\V1\MeetingIntelligenceController;
+use App\Http\Controllers\Api\V1\MeetingJoinController;
 use App\Http\Controllers\Api\V1\MeetingParticipantController;
 use App\Http\Controllers\Api\V1\MeetingProcessingController;
 use App\Http\Controllers\Api\V1\MeetingActionItemController;
+use App\Http\Controllers\Api\V1\MeetingBriefController;
 use App\Http\Controllers\Api\V1\MeetingDecisionActionController;
 use App\Http\Controllers\Api\V1\MemberController;
+use App\Http\Controllers\Api\V1\NotificationController;
 use App\Http\Controllers\Api\V1\MomController;
 use App\Http\Controllers\Api\V1\OrganizationController;
 use App\Http\Controllers\Api\V1\ProfileController;
@@ -56,6 +59,15 @@ Route::prefix('v1')->group(function () {
             ->name('verification.verify');
     });
 
+    // ---- Public join-by-share-code (no account, no org header) ----
+    // The share code is looked up on `share_code` instead of the default ulid
+    // route-key, so it never doubles as a way to fetch a meeting by its real id.
+    Route::prefix('meetings/join/{meeting:share_code}')->group(function () {
+        Route::get('/', [MeetingJoinController::class, 'show']);
+        Route::post('/', [MeetingJoinController::class, 'store']);
+        Route::get('/{requestToken}', [MeetingJoinController::class, 'status']);
+    });
+
     // ---- Authenticated ----
     Route::middleware(['auth:sanctum', SetOrganizationContext::class])->group(function () {
 
@@ -87,6 +99,11 @@ Route::prefix('v1')->group(function () {
         Route::get('dashboard', [DashboardController::class, 'index']);
         Route::get('analytics', [AnalyticsController::class, 'index']);
 
+        Route::get('notifications', [NotificationController::class, 'index']);
+        Route::get('notifications/unread-count', [NotificationController::class, 'unreadCount']);
+        Route::post('notifications/read-all', [NotificationController::class, 'markAllRead']);
+        Route::post('notifications/{notification}/read', [NotificationController::class, 'markRead']);
+
         Route::apiResource('projects', ProjectController::class);
         Route::apiResource('departments', DepartmentController::class)->except(['show']);
         Route::get('decisions', [DecisionController::class, 'index']);
@@ -103,6 +120,11 @@ Route::prefix('v1')->group(function () {
         Route::get('meetings/{meeting}/participants', [MeetingParticipantController::class, 'index']);
         Route::post('meetings/{meeting}/participants', [MeetingParticipantController::class, 'store']);
         Route::delete('meetings/{meeting}/participants/{participant}', [MeetingParticipantController::class, 'destroy']);
+
+        // Waiting room for people who requested to join via share link/code (§ share-to-join)
+        Route::get('meetings/{meeting}/join-requests', [MeetingParticipantController::class, 'joinRequests']);
+        Route::post('meetings/{meeting}/participants/{participant}/approve', [MeetingParticipantController::class, 'approve']);
+        Route::post('meetings/{meeting}/participants/{participant}/deny', [MeetingParticipantController::class, 'deny']);
 
         // Meeting agenda
         Route::get('meetings/{meeting}/agenda', [MeetingAgendaController::class, 'index']);
@@ -124,6 +146,7 @@ Route::prefix('v1')->group(function () {
         Route::post('meetings/{meeting}/decisions/{decision}/reject', [MeetingDecisionActionController::class, 'reject']);
         Route::get('meetings/{meeting}/actions', [MeetingIntelligenceController::class, 'actionItems']);
         Route::get('meetings/{meeting}/mom', [MeetingIntelligenceController::class, 'mom']);
+        Route::get('meetings/{meeting}/brief', [MeetingBriefController::class, 'show']);
 
         // Action item management → task conversion (§25)
         Route::patch('meetings/{meeting}/actions/{actionItem}', [MeetingActionItemController::class, 'update']);

@@ -11,6 +11,8 @@ class MeetingResource extends JsonResource
     {
         return [
             'id' => $this->ulid,
+            'share_code' => $this->share_code,
+            'pending_join_requests_count' => $this->whenCounted('pendingJoinRequests'),
             'title' => $this->title,
             'description' => $this->description,
             'objective' => $this->objective,

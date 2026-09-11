@@ -26,7 +26,7 @@ export function SearchPage() {
   return (
     <div className="mx-auto max-w-3xl space-y-6">
       <div>
-        <h1 className="font-display text-2xl font-semibold text-ink">AI Search</h1>
+        <h1 className="font-display text-2xl font-semibold tracking-tight text-ink">AI Search</h1>
         <p className="mt-1 text-sm text-ink-soft">
           Semantic search across every meeting you have access to — grounded, with a source and timestamp for every hit.
         </p>

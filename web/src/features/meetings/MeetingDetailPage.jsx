@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { useParams, Link } from "react-router-dom";
-import { ArrowLeft, Calendar, Pencil, Play, Video, X } from "lucide-react";
+import { useParams, Link, useNavigate, useSearchParams } from "react-router-dom";
+import { ArrowLeft, Calendar, Download, Pencil, Play, Share2, Video, X } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { Skeleton } from "@/components/ui/Skeleton";
@@ -13,15 +13,24 @@ import { SummaryTab } from "./tabs/SummaryTab";
 import { DecisionsTab } from "./tabs/DecisionsTab";
 import { ActionItemsTab } from "./tabs/ActionItemsTab";
 import { MomTab } from "./tabs/MomTab";
+import { MeetingBriefCard } from "./MeetingBriefCard";
+import { MeetingIntelRail } from "./MeetingIntelRail";
+import { ShareMeetingModal } from "./ShareMeetingModal";
+import { WaitingRoomPanel } from "./WaitingRoomPanel";
+import { downloadIcs, meetingToIcs } from "@/lib/ics";
 
-const TABS = ["Overview", "Transcript", "Summary", "Decisions", "Action Items", "MoM"];
+const TABS = ["Overview", "Brief", "Transcript", "Summary", "Decisions", "Action Items", "MoM"];
 
 export function MeetingDetailPage() {
   const { id = "" } = useParams();
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const initialTab = TABS.includes(searchParams.get("tab") ?? "") ? searchParams.get("tab") : "Overview";
   const { data: meeting, isLoading, refetch: refetchMeeting } = useMeeting(id);
   const { data: processing, refetch: refetchProcessing } = useProcessingStatus(id);
-  const [tab, setTab] = useState("Overview");
+  const [tab, setTab] = useState(initialTab);
   const [showEdit, setShowEdit] = useState(false);
+  const [showShare, setShowShare] = useState(false);
   const [editTitle, setEditTitle] = useState("");
   const [actionError, setActionError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -44,26 +53,63 @@ export function MeetingDetailPage() {
   };
   const openEdit = () => { setEditTitle(meeting.title); setShowEdit(true); };
 
-  return <div className="mx-auto max-w-6xl space-y-6">
-    <Link to="/meetings" className="inline-flex items-center gap-1.5 text-sm text-ink-soft hover:text-ink"><ArrowLeft className="h-4 w-4" /> Meetings</Link>
-    <div className="flex flex-wrap items-start justify-between gap-4">
-      <div><h1 className="font-display text-2xl font-semibold text-ink">{meeting.title}</h1><div className="mt-1.5 flex flex-wrap items-center gap-3 text-sm text-ink-soft"><span className="inline-flex items-center gap-1.5"><Calendar className="h-4 w-4" />{formatDate(meeting.scheduled_start_at)} · {formatTime(meeting.scheduled_start_at)}–{formatTime(meeting.scheduled_end_at)}</span><Badge tone="brand">{meeting.status.replace("_", " ")}</Badge></div></div>
-      <div className="flex flex-wrap gap-2">
-        {meeting.google?.meet_url ? <Button variant="secondary" onClick={() => window.open(meeting.google.meet_url, "_blank")}><Video className="h-4 w-4" /> Join Meet</Button> : <Button variant="secondary" disabled><Video className="h-4 w-4" /> No Meet link</Button>}
-        <Button variant="secondary" onClick={openEdit} disabled={busy}><Pencil className="h-4 w-4" /> Edit</Button>
-        {meeting.status !== "cancelled" && <Button variant="secondary" onClick={cancel} disabled={busy}><X className="h-4 w-4" /> Cancel</Button>}
-        {(processing?.status === "pending" || processing?.status === "failed") && <Button variant="ai" onClick={process} disabled={busy}><Play className="h-4 w-4" /> {processing.status === "failed" ? "Retry AI" : "Process with AI"}</Button>}
+  const processed = meeting.ai_processing_status === "completed" || processing?.status === "completed";
+  const roster = meeting.participants ?? [];
+
+  return <div className="mx-auto max-w-7xl space-y-6">
+    <Link to="/meetings" className="inline-flex items-center gap-1.5 text-sm text-ink-soft transition hover:text-ink"><ArrowLeft className="h-4 w-4" /> Meetings</Link>
+
+    <div className="relative overflow-hidden rounded-2xl border border-line/80 bg-surface shadow-card">
+      <div className="h-1.5 w-full bg-ai" />
+      <div className="flex flex-wrap items-start justify-between gap-4 p-5">
+        <div>
+          <h1 className="font-display text-2xl font-semibold tracking-tight text-ink">{meeting.title}</h1>
+          <div className="mt-1.5 flex flex-wrap items-center gap-3 text-sm text-ink-soft">
+            <span className="inline-flex items-center gap-1.5"><Calendar className="h-4 w-4" />{formatDate(meeting.scheduled_start_at)} · {formatTime(meeting.scheduled_start_at)}–{formatTime(meeting.scheduled_end_at)}</span>
+            <Badge tone="brand">{meeting.status.replace("_", " ")}</Badge>
+          </div>
+          {roster.length > 0 && (
+            <div className="mt-3 flex items-center -space-x-2">
+              {roster.slice(0, 5).map((p, i) => (
+                <span key={p.id ?? i} className="flex h-7 w-7 items-center justify-center rounded-full border-2 border-surface bg-brand-100 text-[11px] font-semibold text-brand-700" title={p.user?.name || p.guest_name}>
+                  {(p.user?.name || p.guest_name || "?").trim()[0]?.toUpperCase()}
+                </span>
+              ))}
+              {roster.length > 5 && <span className="flex h-7 w-7 items-center justify-center rounded-full border-2 border-surface bg-slate-100 text-[10px] font-semibold text-ink-soft">+{roster.length - 5}</span>}
+            </div>
+          )}
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {meeting.status !== "cancelled" && (meeting.google?.meet_url || meeting.status === "scheduled" || meeting.status === "in_progress") ? <Button variant="secondary" onClick={() => navigate(`/meetings/${id}/join`)}><Video className="h-4 w-4" /> Join Meet</Button> : <Button variant="secondary" disabled><Video className="h-4 w-4" /> No Meet link</Button>}
+          {meeting.status !== "cancelled" && <Button variant="ai" onClick={() => setShowShare(true)}><Share2 className="h-4 w-4" /> Share</Button>}
+          <Button variant="outline" onClick={() => downloadIcs(`${meeting.title || "meeting"}.ics`, meetingToIcs(meeting))}><Download className="h-4 w-4" /> .ics</Button>
+          <Button variant="outline" onClick={openEdit} disabled={busy}><Pencil className="h-4 w-4" /> Edit</Button>
+          {meeting.status !== "cancelled" && <Button variant="outline" onClick={cancel} disabled={busy}><X className="h-4 w-4" /> Cancel</Button>}
+          {(processing?.status === "pending" || processing?.status === "failed") && <Button variant="ai" onClick={process} disabled={busy}><Play className="h-4 w-4" /> {processing.status === "failed" ? "Retry AI" : "Process with AI"}</Button>}
+        </div>
       </div>
     </div>
+
     {actionError && <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">{actionError}</div>}
-    <div className="flex gap-1 overflow-x-auto border-b border-line">{TABS.map((item) => <button key={item} onClick={() => setTab(item)} className={`focus-ring whitespace-nowrap border-b-2 px-3 py-2.5 text-sm font-medium ${tab === item ? "border-brand-500 text-brand-700" : "border-transparent text-ink-soft hover:text-ink"}`}>{item}</button>)}</div>
-    {processing && <AiProcessingStatus status={processing} onRetry={process} />}
-    {tab === "Overview" && <div className="rounded-2xl border border-line bg-surface p-5 shadow-card"><h2 className="font-display text-lg font-semibold text-ink">Details</h2><dl className="mt-4 grid gap-4 sm:grid-cols-2"><div><dt className="text-sm text-ink-soft">Organizer</dt><dd className="text-ink">{meeting.organizer?.name || "—"}</dd></div><div><dt className="text-sm text-ink-soft">Language</dt><dd className="text-ink">{meeting.primary_language}</dd></div><div><dt className="text-sm text-ink-soft">Participants</dt><dd className="text-ink">{meeting.participants_count ?? meeting.participants?.length ?? 0}</dd></div><div><dt className="text-sm text-ink-soft">Project</dt><dd className="text-ink">{meeting.project?.name || "—"}</dd></div></dl></div>}
-    {tab === "Transcript" && <TranscriptTab meetingId={id} />}
-    {tab === "Summary" && <SummaryTab meetingId={id} />}
-    {tab === "Decisions" && <DecisionsTab meetingId={id} />}
-    {tab === "Action Items" && <ActionItemsTab meetingId={id} />}
-    {tab === "MoM" && <MomTab meetingId={id} />}
-    {showEdit && <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/30 px-4"><form onSubmit={saveEdit} className="w-full max-w-md space-y-5 rounded-2xl bg-surface p-6 shadow-pop"><h2 className="font-display text-xl font-semibold text-ink">Edit meeting</h2><label className="block text-sm font-medium text-ink">Title<input required value={editTitle} onChange={(event) => setEditTitle(event.target.value)} className="focus-ring mt-1.5 h-10 w-full rounded-xl border border-line px-3 font-normal" /></label><div className="flex justify-end gap-2"><Button type="button" variant="secondary" onClick={() => setShowEdit(false)}>Close</Button><Button type="submit" disabled={busy}>Save changes</Button></div></form></div>}
+
+    <WaitingRoomPanel meetingId={id} />
+
+    <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1fr_320px]">
+      <div className="min-w-0 space-y-6">
+        <div className="flex gap-1 overflow-x-auto rounded-xl bg-slate-100/80 p-1">{TABS.map((item) => <button key={item} onClick={() => setTab(item)} className={`focus-ring whitespace-nowrap rounded-lg px-3 py-2 text-sm font-medium transition-all ${tab === item ? "bg-surface text-brand-700 shadow-sm" : "text-ink-soft hover:text-ink"}`}>{item}</button>)}</div>
+        {processing && <AiProcessingStatus status={processing} onRetry={process} />}
+        {tab === "Overview" && <div className="space-y-5"><div className="rounded-2xl border border-line/80 bg-surface p-5 shadow-card"><h2 className="font-display text-lg font-semibold text-ink">Details</h2><dl className="mt-4 grid gap-4 sm:grid-cols-2"><div><dt className="text-sm text-ink-soft">Organizer</dt><dd className="font-medium text-ink">{meeting.organizer?.name || "—"}</dd></div><div><dt className="text-sm text-ink-soft">Language</dt><dd className="font-medium text-ink">{meeting.primary_language}</dd></div><div><dt className="text-sm text-ink-soft">Participants</dt><dd className="font-medium text-ink">{meeting.participants_count ?? meeting.participants?.length ?? 0}</dd></div><div><dt className="text-sm text-ink-soft">Project</dt><dd className="font-medium text-ink">{meeting.project?.name || "—"}</dd></div></dl></div><MeetingBriefCard meetingId={id} /></div>}
+        {tab === "Brief" && <MeetingBriefCard meetingId={id} />}
+        {tab === "Transcript" && <TranscriptTab meetingId={id} />}
+        {tab === "Summary" && <SummaryTab meetingId={id} />}
+        {tab === "Decisions" && <DecisionsTab meetingId={id} />}
+        {tab === "Action Items" && <ActionItemsTab meetingId={id} />}
+        {tab === "MoM" && <MomTab meetingId={id} />}
+      </div>
+      <MeetingIntelRail meeting={meeting} processed={processed} />
+    </div>
+
+    {showEdit && <div className="modal-scrim"><form onSubmit={saveEdit} className="modal-panel max-w-md"><h2 className="font-display text-xl font-semibold text-ink">Edit meeting</h2><label className="block text-sm font-medium text-ink">Title<input required value={editTitle} onChange={(event) => setEditTitle(event.target.value)} className="field mt-1.5" /></label><div className="flex justify-end gap-2"><Button type="button" variant="outline" onClick={() => setShowEdit(false)}>Close</Button><Button type="submit" disabled={busy}>Save changes</Button></div></form></div>}
+    {showShare && <ShareMeetingModal meeting={meeting} onClose={() => setShowShare(false)} />}
   </div>;
 }

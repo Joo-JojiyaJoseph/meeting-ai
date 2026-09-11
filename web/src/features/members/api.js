@@ -12,7 +12,10 @@ export function useInviteMember() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (payload) => (await api.post("/v1/members", payload)).data,
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["members"] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["members"] });
+      qc.invalidateQueries({ queryKey: ["notifications"] });
+    },
   });
 }
 

@@ -8,6 +8,17 @@ export function useProjects(params = {}) {
   });
 }
 
+export function useProject(id) {
+  return useQuery({
+    queryKey: ["project", id],
+    enabled: Boolean(id),
+    queryFn: async () => {
+      const { data } = await api.get(`/v1/projects/${id}`);
+      return data.data ?? data;
+    },
+  });
+}
+
 export function useCreateProject() {
   const qc = useQueryClient();
   return useMutation({

@@ -21,6 +21,7 @@ export function useAcceptActionItem(meetingId) {
         onSuccess: () => {
             qc.invalidateQueries({ queryKey: ["actions", meetingId] });
             qc.invalidateQueries({ queryKey: ["tasks"] });
+            qc.invalidateQueries({ queryKey: ["notifications"] });
         },
     });
 }

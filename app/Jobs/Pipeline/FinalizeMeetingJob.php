@@ -5,6 +5,7 @@ namespace App\Jobs\Pipeline;
 use App\Enums\AiProcessingStatus;
 use App\Models\Meeting;
 use App\Services\AI\AiClient;
+use App\Services\Notifications\NotificationService;
 
 class FinalizeMeetingJob extends PipelineJob
 {
@@ -15,6 +16,11 @@ class FinalizeMeetingJob extends PipelineJob
 
     protected function process(Meeting $meeting, AiClient $ai): void
     {
-        // Terminal stage. A MeetingProcessed notification would fire here (§38).
+        app(NotificationService::class)->notifyMeetingParticipants($meeting, 'meeting.processed', [
+            'title' => 'AI insights ready',
+            'body' => 'MeetingAI finished processing '.$meeting->title.'.',
+            'url' => '/meetings/'.$meeting->ulid,
+            'meeting_id' => $meeting->ulid,
+        ]);
     }
 }

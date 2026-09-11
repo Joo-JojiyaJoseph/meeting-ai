@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Users, Plus, X, MoreVertical } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
@@ -118,6 +119,7 @@ function MemberRow({ m }) {
 
 export function MembersPage() {
   const [showInvite, setShowInvite] = useState(false);
+  const navigate = useNavigate();
   const { data, isLoading } = useMembers();
 
   return (
@@ -125,11 +127,16 @@ export function MembersPage() {
       <div className="flex items-start justify-between gap-4">
         <div>
           <h1 className="font-display text-2xl font-semibold text-ink">Members</h1>
-          <p className="mt-1 text-sm text-ink-soft">Everyone with access to this organization.</p>
+          <p className="mt-1 text-sm text-ink-soft">Invite teammates, then select them when you create a meeting.</p>
         </div>
-        <Button size="sm" onClick={() => setShowInvite((v) => !v)}>
-          <Plus className="h-4 w-4" /> Invite member
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button size="sm" variant="secondary" onClick={() => navigate("/meetings/new")}>
+            Schedule meeting
+          </Button>
+          <Button size="sm" onClick={() => setShowInvite((v) => !v)}>
+            <Plus className="h-4 w-4" /> Invite member
+          </Button>
+        </div>
       </div>
 
       {showInvite && <InviteForm onClose={() => setShowInvite(false)} />}

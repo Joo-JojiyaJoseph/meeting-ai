@@ -20,6 +20,25 @@ class Meeting extends Model
 
     protected $guarded = ['id', 'ulid', 'organization_id'];
 
+    /** Generates a short, unguessable share code for the join-by-link/WhatsApp flow. */
+    protected static function booted(): void
+    {
+        static::creating(function (self $model) {
+            if (empty($model->share_code)) {
+                $model->share_code = self::generateUniqueShareCode();
+            }
+        });
+    }
+
+    protected static function generateUniqueShareCode(): string
+    {
+        do {
+            $code = strtoupper(\Illuminate\Support\Str::random(8));
+        } while (self::withTrashed()->where('share_code', $code)->exists());
+
+        return $code;
+    }
+
     protected function casts(): array
     {
         return [
@@ -57,6 +76,12 @@ class Meeting extends Model
     public function participants(): HasMany
     {
         return $this->hasMany(MeetingParticipant::class);
+    }
+
+    /** Guests waiting in the "waiting room" after requesting to join via share link. */
+    public function pendingJoinRequests(): HasMany
+    {
+        return $this->participants()->where('join_status', 'pending');
     }
 
     public function agendaItems(): HasMany

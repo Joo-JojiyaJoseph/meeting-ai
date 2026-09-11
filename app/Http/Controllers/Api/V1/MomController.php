@@ -12,6 +12,7 @@ use App\Mail\MinutesOfMeetingMail;
 use App\Models\Meeting;
 use App\Models\MinutesOfMeeting;
 use App\Services\Mom\MomExportService;
+use App\Services\Notifications\NotificationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Mail;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -99,6 +100,13 @@ class MomController extends Controller
         abort_unless($mom->status->value === 'approved', 422, 'Minutes must be approved before publishing.');
 
         $mom->update(['status' => 'published', 'published_at' => now()]);
+
+        app(NotificationService::class)->notifyMeetingParticipants($meeting, 'mom.published', [
+            'title' => 'Minutes published',
+            'body' => 'Minutes for '.$meeting->title.' are ready.',
+            'url' => '/meetings/'.$meeting->ulid.'?tab=MoM',
+            'meeting_id' => $meeting->ulid,
+        ]);
 
         return response()->json(['message' => 'Minutes published.', 'status' => 'published']);
     }

@@ -19,11 +19,13 @@ class ProjectController extends Controller
     {
         $this->authorize('viewAny', Project::class);
 
+        $perPage = min(max($request->integer('per_page', 20), 1), 100);
+
         $projects = Project::query()
             ->when($request->filled('status'), fn ($q) => $q->where('status', $request->status))
             ->withCount(['meetings', 'tasks'])
             ->latest()
-            ->paginate(20);
+            ->paginate($perPage);
 
         return ProjectResource::collection($projects);
     }

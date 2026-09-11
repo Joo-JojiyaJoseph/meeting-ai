@@ -10,7 +10,7 @@ export function Toggle({ checked, onChange, disabled, label }) {
       disabled={disabled}
       onClick={() => onChange?.(!checked)}
       className={clsx(
-        "focus-ring relative h-6 w-11 shrink-0 rounded-full transition-colors disabled:cursor-not-allowed disabled:opacity-50",
+        "focus-ring relative h-6 w-11 shrink-0 rounded-full transition-all duration-200 disabled:cursor-not-allowed disabled:opacity-50",
         checked ? "bg-brand-500" : "bg-line"
       )}
     >

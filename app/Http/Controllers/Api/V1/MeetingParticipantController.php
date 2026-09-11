@@ -46,4 +46,34 @@ class MeetingParticipantController extends Controller
 
         return response()->json(['message' => 'Participant removed.']);
     }
+
+    /** Guests currently waiting to be let in after requesting to join via share link. */
+    public function joinRequests(Meeting $meeting): AnonymousResourceCollection
+    {
+        $this->authorize('manageParticipants', $meeting);
+
+        return ParticipantResource::collection(
+            $meeting->pendingJoinRequests()->orderBy('join_requested_at')->get()
+        );
+    }
+
+    public function approve(Meeting $meeting, int $participant): JsonResponse
+    {
+        $this->authorize('manageParticipants', $meeting);
+
+        $row = $meeting->participants()->whereKey($participant)->firstOrFail();
+        $row->update(['join_status' => 'approved']);
+
+        return (new ParticipantResource($row))->response();
+    }
+
+    public function deny(Meeting $meeting, int $participant): JsonResponse
+    {
+        $this->authorize('manageParticipants', $meeting);
+
+        $row = $meeting->participants()->whereKey($participant)->firstOrFail();
+        $row->update(['join_status' => 'denied']);
+
+        return (new ParticipantResource($row))->response();
+    }
 }

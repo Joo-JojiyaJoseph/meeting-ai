@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { FolderKanban, Plus, X, CalendarDays, CheckSquare } from "lucide-react";
+import { Link } from "react-router-dom";
+import { FolderKanban, Plus, X, CalendarDays, CheckSquare, Video } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
@@ -82,7 +83,7 @@ export function ProjectsPage() {
       <div className="flex items-start justify-between gap-4">
         <div>
           <h1 className="font-display text-2xl font-semibold text-ink">Projects</h1>
-          <p className="mt-1 text-sm text-ink-soft">Meetings and tasks, grouped by initiative.</p>
+          <p className="mt-1 text-sm text-ink-soft">Create a project first, then pick members and schedule a meeting.</p>
         </div>
         <Button size="sm" onClick={() => setShowNew((v) => !v)}>
           <Plus className="h-4 w-4" /> New project
@@ -129,6 +130,12 @@ export function ProjectsPage() {
                 <span className="flex items-center gap-1"><CheckSquare className="h-3.5 w-3.5" /> {p.tasks_count ?? 0}</span>
                 {p.owner?.name && <span className="ml-auto truncate">{p.owner.name}</span>}
               </div>
+              <Link
+                to={`/meetings/new?project=${p.id}`}
+                className="focus-ring mt-1 inline-flex items-center gap-1.5 text-sm font-medium text-brand-700 hover:text-brand-800"
+              >
+                <Video className="h-3.5 w-3.5" /> Schedule meeting
+              </Link>
             </Card>
           ))}
         </div>

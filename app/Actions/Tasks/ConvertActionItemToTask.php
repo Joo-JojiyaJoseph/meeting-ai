@@ -7,6 +7,7 @@ use App\Enums\TaskStatus;
 use App\Models\MeetingActionItem;
 use App\Models\Task;
 use App\Models\User;
+use App\Services\Notifications\NotificationService;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -48,7 +49,17 @@ class ConvertActionItemToTask
                 'assignee_user_id' => $task->assignee_id,
             ]);
 
-            // TaskAssigned notification would fire here (§38).
+            if ($task->assignee_id && $task->assignee_id !== $creator->id) {
+                $assignee = User::find($task->assignee_id);
+                if ($assignee) {
+                    app(NotificationService::class)->send($assignee, 'task.assigned', [
+                        'title' => 'Task assigned',
+                        'body' => $task->title,
+                        'url' => '/tasks',
+                        'meeting_id' => $meeting->ulid,
+                    ], $meeting->organization_id);
+                }
+            }
 
             return $task;
         });
