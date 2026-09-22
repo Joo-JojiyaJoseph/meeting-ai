@@ -56,6 +56,20 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Frontend URL
+    |--------------------------------------------------------------------------
+    |
+    | The SPA's own origin, distinct from the API's own `url` above. Used
+    | anywhere we build a link meant to be opened in the browser app rather
+    | than hit as an API endpoint — e.g. OAuth callback redirects, and links
+    | inside emails (see MinutesOfMeetingMail).
+    |
+    */
+
+    'frontend_url' => env('APP_FRONTEND_URL', env('APP_URL', 'http://localhost')),
+
+    /*
+    |--------------------------------------------------------------------------
     | Application Timezone
     |--------------------------------------------------------------------------
     |

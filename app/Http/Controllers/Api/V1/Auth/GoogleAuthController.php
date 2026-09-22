@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Api\V1\Auth;
 
 use App\Http\Controllers\Controller;
-use App\Http\Resources\UserResource;
 use App\Models\GoogleAccount;
 use App\Models\User;
 use App\Support\OrganizationContext;
@@ -32,20 +31,37 @@ class GoogleAuthController extends Controller
     /** Returns the Google consent URL for the SPA to redirect to. */
     public function redirect(Request $request): JsonResponse
     {
+        // `redirect_to` is an SPA route (e.g. "/meetings/new") to land back on
+        // once the callback finishes — round-tripped via OAuth `state` since
+        // Google only echoes that param back, nothing else we'd add here.
+        $state = (string) Str::uuid().'|'.$request->query('redirect_to', '/dashboard');
+
         $url = Socialite::driver('google')
             ->stateless()
             ->scopes($this->calendarScopes)
-            ->with(['access_type' => 'offline', 'prompt' => 'consent'])
+            ->with(['access_type' => 'offline', 'prompt' => 'consent', 'state' => $state])
             ->redirect()
             ->getTargetUrl();
 
         return response()->json(['url' => $url]);
     }
 
-    /** Handles the OAuth callback: logs the user in and stores their tokens. */
-    public function callback(Request $request): JsonResponse
+    /**
+     * Handles the OAuth callback: logs the user in (or, if already
+     * authenticated, links Calendar/Meet access to their existing account),
+     * then redirects back to the SPA — this URL is opened directly by
+     * Google's redirect, so it must never just dump JSON in the browser.
+     */
+    public function callback(Request $request): \Illuminate\Http\RedirectResponse
     {
-        $googleUser = Socialite::driver('google')->stateless()->user();
+        $frontend = rtrim(config('app.frontend_url'), '/');
+        $redirectTo = Str::after((string) $request->query('state'), '|') ?: '/dashboard';
+
+        try {
+            $googleUser = Socialite::driver('google')->stateless()->user();
+        } catch (\Throwable $e) {
+            return redirect()->away("{$frontend}/auth/google/callback?error=1&redirect_to=".urlencode($redirectTo));
+        }
 
         $user = User::firstOrCreate(
             ['email' => $googleUser->getEmail()],
@@ -78,10 +94,12 @@ class GoogleAuthController extends Controller
 
         $token = $user->createToken('google-spa')->plainTextToken;
 
-        return response()->json([
-            'user' => new UserResource($user),
+        $query = http_build_query([
             'token' => $token,
-            'google_connected' => $organization !== null,
+            'google_connected' => $organization !== null ? 1 : 0,
+            'redirect_to' => $redirectTo,
         ]);
+
+        return redirect()->away("{$frontend}/auth/google/callback?{$query}");
     }
 }

@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { EmptyCalendarIllustration, AllCaughtUpIllustration } from "@/components/illustrations/EmptyIllustrations";
 import { useAuthStore } from "@/stores/auth";
 import { greeting, formatTime } from "@/lib/format";
 import { useDashboard } from "./api";
@@ -35,8 +36,9 @@ export function DashboardPage() {
 
   return (
     <div className="mx-auto max-w-7xl space-y-8">
-      <div className="relative overflow-hidden rounded-2xl border border-brand-100 bg-ai-soft p-6 sm:p-8">
-        <div className="pointer-events-none absolute -right-10 -top-10 h-40 w-40 rounded-full bg-brand-200/40 blur-3xl" />
+      <div className="glass-panel-strong relative overflow-hidden p-6 sm:p-8">
+        <div className="pointer-events-none absolute -right-10 -top-10 h-40 w-40 rounded-full bg-brand-300/40 blur-3xl" />
+        <div className="pointer-events-none absolute -bottom-16 left-1/3 h-40 w-40 rounded-full bg-accent-400/30 blur-3xl" />
         <div className="relative flex flex-wrap items-start justify-between gap-4">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-brand-700">Workspace</p>
@@ -77,7 +79,7 @@ export function DashboardPage() {
               ))}
             </div>
           ) : (
-            <EmptyState icon={CalendarDays} title="No meetings today" description="Schedule a meeting to open Google Meet in this window." action={<Button size="sm" onClick={() => navigate("/meetings/new")}><Plus className="h-4 w-4" /> New meeting</Button>} />
+            <EmptyState icon={CalendarDays} illustration={EmptyCalendarIllustration} title="No meetings today" description="Schedule a meeting to open Google Meet in this window." action={<Button size="sm" onClick={() => navigate("/meetings/new")}><Plus className="h-4 w-4" /> New meeting</Button>} />
           )}
         </section>
         <section>
@@ -97,7 +99,7 @@ export function DashboardPage() {
               ))}
             </Card>
           ) : (
-            <EmptyState icon={ListChecks} title="Nothing pending" description="You're all caught up." />
+            <EmptyState icon={ListChecks} illustration={AllCaughtUpIllustration} title="Nothing pending" description="You're all caught up." />
           )}
         </section>
       </div>

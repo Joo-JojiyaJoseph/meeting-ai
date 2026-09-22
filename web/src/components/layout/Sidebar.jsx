@@ -62,7 +62,7 @@ export function SidebarNav({ onNavigate, className }) {
 
 export function Sidebar() {
   return (
-    <aside className="hidden w-64 shrink-0 flex-col border-r border-line/80 bg-surface/90 px-3 py-5 backdrop-blur-md lg:flex">
+    <aside className="glass-rail sticky top-3 ml-3 hidden h-[calc(100vh-1.5rem)] w-64 shrink-0 flex-col rounded-2xl px-3 py-5 lg:flex">
       <SidebarNav />
     </aside>
   );

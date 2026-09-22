@@ -152,49 +152,53 @@ export function CalendarPage() {
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_20rem]">
         <Card className="overflow-hidden p-0">
-          <div className="grid grid-cols-7 border-b border-line bg-canvas/70">
-            {WEEKDAY_LABELS.map((label) => (
-              <div key={label} className="px-2 py-2 text-center text-xs font-semibold uppercase tracking-wide text-ink-soft">{label}</div>
-            ))}
+          <div className="overflow-x-auto">
+            <div className="min-w-[640px]">
+              <div className="grid grid-cols-7 border-b border-line bg-canvas/70">
+                {WEEKDAY_LABELS.map((label) => (
+                  <div key={label} className="px-2 py-2 text-center text-xs font-semibold uppercase tracking-wide text-ink-soft">{label}</div>
+                ))}
+              </div>
+              {isLoading ? (
+                <div className={`grid grid-cols-7 ${view === "week" ? "min-h-[22rem]" : ""}`}>
+                  {days.map((day) => <Skeleton key={isoDate(day)} className="h-24 rounded-none border-b border-r border-line/70" />)}
+                </div>
+              ) : (
+                <div className="grid grid-cols-7">
+                  {days.map((day) => {
+                    const items = meetingsOnDay(meetings, day);
+                    const inMonth = day.getMonth() === cursor.getMonth();
+                    const isToday = sameDay(day, today);
+                    const isSelected = sameDay(day, selected);
+                    return (
+                      <button
+                        key={isoDate(day)}
+                        type="button"
+                        onClick={() => setSelected(startOfDay(day))}
+                        onDoubleClick={() => scheduleOn(day)}
+                        className={`min-h-[6.5rem] border-b border-r border-line/70 p-1.5 text-left transition ${isSelected ? "bg-brand-50" : "bg-surface hover:bg-canvas"} ${view === "week" ? "min-h-[22rem]" : ""}`}
+                      >
+                        <div className="mb-1 flex items-center justify-between">
+                          <span className={`flex h-6 w-6 items-center justify-center rounded-full text-xs font-semibold ${isToday ? "bg-ai text-white" : inMonth || view === "week" ? "text-ink" : "text-ink-soft/50"}`}>
+                            {day.getDate()}
+                          </span>
+                          {items.length > 0 && <span className="text-[10px] font-medium text-brand-700">{items.length}</span>}
+                        </div>
+                        <div className="space-y-1">
+                          {items.slice(0, view === "week" ? 8 : 3).map((meeting) => (
+                            <MeetingChip key={meeting.id} meeting={meeting} onOpen={openMeeting} />
+                          ))}
+                          {items.length > (view === "week" ? 8 : 3) && (
+                            <p className="text-[10px] text-ink-soft">+{items.length - (view === "week" ? 8 : 3)} more</p>
+                          )}
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
           </div>
-          {isLoading ? (
-            <div className={`grid grid-cols-7 ${view === "week" ? "min-h-[22rem]" : ""}`}>
-              {days.map((day) => <Skeleton key={isoDate(day)} className="h-24 rounded-none border-b border-r border-line/70" />)}
-            </div>
-          ) : (
-            <div className="grid grid-cols-7">
-              {days.map((day) => {
-                const items = meetingsOnDay(meetings, day);
-                const inMonth = day.getMonth() === cursor.getMonth();
-                const isToday = sameDay(day, today);
-                const isSelected = sameDay(day, selected);
-                return (
-                  <button
-                    key={isoDate(day)}
-                    type="button"
-                    onClick={() => setSelected(startOfDay(day))}
-                    onDoubleClick={() => scheduleOn(day)}
-                    className={`min-h-[6.5rem] border-b border-r border-line/70 p-1.5 text-left transition ${isSelected ? "bg-brand-50" : "bg-surface hover:bg-canvas"} ${view === "week" ? "min-h-[22rem]" : ""}`}
-                  >
-                    <div className="mb-1 flex items-center justify-between">
-                      <span className={`flex h-6 w-6 items-center justify-center rounded-full text-xs font-semibold ${isToday ? "bg-ai text-white" : inMonth || view === "week" ? "text-ink" : "text-ink-soft/50"}`}>
-                        {day.getDate()}
-                      </span>
-                      {items.length > 0 && <span className="text-[10px] font-medium text-brand-700">{items.length}</span>}
-                    </div>
-                    <div className="space-y-1">
-                      {items.slice(0, view === "week" ? 8 : 3).map((meeting) => (
-                        <MeetingChip key={meeting.id} meeting={meeting} onOpen={openMeeting} />
-                      ))}
-                      {items.length > (view === "week" ? 8 : 3) && (
-                        <p className="text-[10px] text-ink-soft">+{items.length - (view === "week" ? 8 : 3)} more</p>
-                      )}
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-          )}
         </Card>
 
         <div className="space-y-4">

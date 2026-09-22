@@ -12,6 +12,10 @@ export const useAuthStore = create()(persist((set, get) => ({
         organizations: organizations ?? [],
         organizationId: organizations?.[0]?.id ?? get().organizationId,
     }),
+    // Used by the Google OAuth callback, which only hands back a token —
+    // ProtectedRoute's existing effect re-hydrates user/orgs/permissions
+    // from /auth/me whenever `token` changes, so this alone is enough.
+    setToken: (token) => set({ token }),
     setContext: ({ user, organizations, permissions, organizationId }) => set((s) => ({
         user: user ?? s.user,
         organizations: organizations ?? s.organizations,

@@ -20,6 +20,12 @@ class PublicMeetingResource extends JsonResource
             'scheduled_start_at' => $this->scheduled_start_at,
             'scheduled_end_at' => $this->scheduled_end_at,
             'status' => $this->status,
+            // The whole point of a share link is to hand this out, so it's
+            // safe (and the point) to expose it here — this is the real
+            // Google Meet meeting; our app is only the interface around it.
+            // Google Meet's own "ask to join" / host-admit flow governs who
+            // actually gets into the call, not anything on our side.
+            'meet_url' => $this->meet_url,
         ];
     }
 }

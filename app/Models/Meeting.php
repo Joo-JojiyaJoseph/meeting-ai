@@ -139,6 +139,12 @@ class Meeting extends Model
         return $this->hasMany(MeetingActionItem::class);
     }
 
+    /** Manual, non-AI notes jotted by participants during/after the meeting. */
+    public function notes(): HasMany
+    {
+        return $this->hasMany(MeetingNote::class)->latest();
+    }
+
     public function minutes(): HasOne
     {
         return $this->hasOne(MinutesOfMeeting::class);

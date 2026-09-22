@@ -1,16 +1,17 @@
 import { useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { ArrowLeft, BarChart3, FileText, Gavel, Sparkles } from "lucide-react";
+import { ArrowLeft, BarChart3, FileText, Gavel, NotebookPen, Sparkles } from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { formatDate, formatTime } from "@/lib/format";
 import { useMeeting } from "./detail-api";
 import { MeetEmbed } from "./MeetEmbed";
 import { MeetingBriefCard } from "./MeetingBriefCard";
+import { MeetingNotesPanel } from "./MeetingNotesPanel";
 
 export function MeetingRoomPage() {
   const { id = "" } = useParams();
-  const [showBrief, setShowBrief] = useState(false);
+  const [panel, setPanel] = useState(null); // null | "brief" | "notes"
   const { data: meeting, isLoading } = useMeeting(id);
 
   if (isLoading || !meeting) {
@@ -40,7 +41,10 @@ export function MeetingRoomPage() {
         </div>
         <Badge tone="brand">{meeting.status.replace("_", " ")}</Badge>
         <div className="hidden items-center gap-1 sm:flex">
-          <button type="button" onClick={() => setShowBrief((v) => !v)} className="focus-ring rounded-xl px-2.5 py-1.5 text-xs font-medium text-white/70 transition hover:bg-white/10 hover:text-white">
+          <button type="button" onClick={() => setPanel((p) => (p === "notes" ? null : "notes"))} className="focus-ring rounded-xl px-2.5 py-1.5 text-xs font-medium text-white/70 transition hover:bg-white/10 hover:text-white">
+            <span className="inline-flex items-center gap-1"><NotebookPen className="h-3.5 w-3.5" /> Notes</span>
+          </button>
+          <button type="button" onClick={() => setPanel((p) => (p === "brief" ? null : "brief"))} className="focus-ring rounded-xl px-2.5 py-1.5 text-xs font-medium text-white/70 transition hover:bg-white/10 hover:text-white">
             <span className="inline-flex items-center gap-1"><Sparkles className="h-3.5 w-3.5" /> Brief</span>
           </button>
           <Link to={`/meetings/${id}?tab=Brief`} className="focus-ring hidden rounded-xl px-2.5 py-1.5 text-xs font-medium text-white/70 transition hover:bg-white/10 hover:text-white xl:inline-flex">
@@ -58,11 +62,11 @@ export function MeetingRoomPage() {
         </div>
       </header>
       <main className="relative min-h-0 flex-1">
-        <div className={`h-full ${showBrief ? "lg:grid lg:grid-cols-[1fr_22rem]" : ""}`}>
+        <div className={`h-full ${panel ? "lg:grid lg:grid-cols-[1fr_22rem]" : ""}`}>
           <MeetEmbed roomId={meeting.id} title={meeting.title} googleMeetUrl={meeting.google?.meet_url} />
-          {showBrief && (
+          {panel && (
             <aside className="absolute inset-x-3 bottom-16 z-20 max-h-[50vh] overflow-y-auto rounded-2xl bg-white text-ink shadow-pop lg:static lg:max-h-none lg:rounded-none lg:bg-canvas">
-              <MeetingBriefCard meetingId={id} compact />
+              {panel === "brief" ? <MeetingBriefCard meetingId={id} compact /> : <MeetingNotesPanel meetingId={id} compact />}
             </aside>
           )}
         </div>

@@ -13,7 +13,23 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        // CRITICAL: without this, SetOrganizationContext (a custom, unlisted
+        // middleware) is NOT in Laravel's default middleware priority list,
+        // so the framework's SubstituteBindings middleware — which resolves
+        // route-model-bound parameters like {meeting} — runs BEFORE it on
+        // every request. That means every org-scoped model's global query
+        // scope evaluates with no organization set yet, silently becoming a
+        // no-op and returning ANY organization's row for a matching ulid.
+        // Verified via real HTTP requests (not just test-harness behavior):
+        // this was a full, persistent, unauthenticated-context tenant
+        // isolation failure, not an edge case.
         //
+        // Fix: force SetOrganizationContext to run before SubstituteBindings
+        // resolves any route-model-bound parameter.
+        $middleware->prependToPriorityList(
+            before: \Illuminate\Routing\Middleware\SubstituteBindings::class,
+            prepend: \App\Http\Middleware\SetOrganizationContext::class,
+        );
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(

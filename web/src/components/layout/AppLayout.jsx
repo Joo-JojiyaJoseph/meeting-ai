@@ -18,13 +18,13 @@ export function AppLayout() {
   }
 
   return (
-    <div className="flex min-h-screen bg-canvas bg-hero-grid">
+    <div className="flex min-h-screen bg-mesh bg-fixed">
       <Sidebar />
       {mobileOpen && (
         <div className="fixed inset-0 z-40 lg:hidden">
           <button type="button" className="absolute inset-0 bg-ink/40 backdrop-blur-sm" aria-label="Close navigation" onClick={() => setMobileOpen(false)} />
-          <aside className="relative flex h-full w-72 flex-col bg-surface px-3 py-5 shadow-pop">
-            <button type="button" onClick={() => setMobileOpen(false)} className="focus-ring absolute right-3 top-5 rounded-lg p-1.5 text-ink-soft hover:bg-canvas" aria-label="Close">
+          <aside className="glass-panel-strong relative ml-3 mt-3 flex h-[calc(100vh-1.5rem)] w-72 flex-col rounded-2xl px-3 py-5">
+            <button type="button" onClick={() => setMobileOpen(false)} className="focus-ring absolute right-3 top-5 rounded-lg p-1.5 text-ink-soft hover:bg-white/60" aria-label="Close">
               <X className="h-4 w-4" />
             </button>
             <SidebarNav onNavigate={() => setMobileOpen(false)} />

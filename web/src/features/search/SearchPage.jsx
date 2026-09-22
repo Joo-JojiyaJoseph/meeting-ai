@@ -5,6 +5,7 @@ import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { EmptySearchIllustration } from "@/components/illustrations/EmptyIllustrations";
 import { SourceRef } from "@/components/ui/SourceRef";
 import { useSemanticSearch } from "./api";
 
@@ -39,7 +40,7 @@ export function SearchPage() {
           value={q}
           onChange={(e) => setQ(e.target.value)}
           placeholder="What did we decide about the Q3 roadmap?"
-          className="focus-ring w-full rounded-2xl border border-line bg-surface py-3 pl-10 pr-4 text-sm shadow-card"
+          className="focus-ring w-full rounded-2xl border border-white/60 bg-white/60 py-3 pl-10 pr-4 text-sm shadow-glass"
         />
       </form>
 
@@ -82,6 +83,7 @@ export function SearchPage() {
         ) : (
           <EmptyState
             icon={SearchIcon}
+            illustration={EmptySearchIllustration}
             title="No matches"
             description={`Nothing found for "${submitted}". Try different wording.`}
           />

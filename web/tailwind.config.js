@@ -26,7 +26,7 @@ export default {
           500: "#06B6D4",
         },
         surface: "#FFFFFF",
-        canvas: "#F4F7FB",
+        canvas: "#EEF1FA",
         ink: {
           DEFAULT: "#0B1220",
           soft: "#5B6B80",
@@ -45,13 +45,15 @@ export default {
         card: "0 1px 2px rgba(11,18,32,0.04), 0 10px 28px -16px rgba(79,70,229,0.22)",
         pop: "0 16px 40px -16px rgba(11,18,32,0.28)",
         glow: "0 0 0 4px rgba(79,70,229,0.12)",
+        glass: "0 1px 1px rgba(255,255,255,0.5) inset, 0 8px 32px -12px rgba(30,27,75,0.25)",
+        "glass-lg": "0 1px 1px rgba(255,255,255,0.6) inset, 0 24px 60px -20px rgba(30,27,75,0.35)",
       },
       backgroundImage: {
         ai: "linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%)",
         "ai-soft": "linear-gradient(135deg, #EEF2FF 0%, #F5F3FF 52%, #ECFEFF 100%)",
         "hero-grid": "radial-gradient(ellipse 80% 50% at 50% -10%, rgba(79,70,229,0.16), transparent)",
         mesh:
-          "radial-gradient(38rem 22rem at 92% -8%, rgba(124,58,237,0.10), transparent), radial-gradient(30rem 20rem at -6% 18%, rgba(37,99,235,0.08), transparent)",
+          "radial-gradient(42rem 30rem at 88% -10%, rgba(124,58,237,0.24), transparent 60%), radial-gradient(36rem 26rem at -8% 12%, rgba(37,99,235,0.20), transparent 60%), radial-gradient(30rem 24rem at 50% 105%, rgba(6,182,212,0.16), transparent 60%), linear-gradient(180deg, #EEF1FA 0%, #E7ECFA 100%)",
       },
       keyframes: {
         "fade-up": {

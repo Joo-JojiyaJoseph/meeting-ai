@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/Button";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { Toggle } from "@/components/ui/Toggle";
 import { useAuthStore } from "@/stores/auth";
+import { useGoogleIntegration, useConnectGoogle } from "@/features/auth/google-api";
 import { useMembers, useInviteMember } from "@/features/members/api";
 import { useProjects, useCreateProject, useProject } from "@/features/projects/api";
 import { useCreateMeeting } from "./api";
@@ -231,7 +232,7 @@ function MembersStep({ selectedIds, onToggle, onInvited }) {
   );
 }
 
-function MeetingStep({ form, setForm }) {
+function MeetingStep({ form, setForm, googleStatus, connectGoogle, onConnectGoogle }) {
   const update = (field) => (event) => setForm((current) => ({ ...current, [field]: event.target.value }));
 
   return (
@@ -265,10 +266,26 @@ function MeetingStep({ form, setForm }) {
       <div className="flex items-start justify-between gap-4 rounded-2xl border border-line p-4">
         <div>
           <p className="font-medium text-ink">Create Google Meet</p>
-          <p className="mt-0.5 text-sm text-ink-soft">Adds a conference link and opens it embedded in MeetingAI when you join.</p>
+          <p className="mt-0.5 text-sm text-ink-soft">Adds a conference link and opens it embedded in MeetingAI when you join. You're the organizer, so Google Meet makes you the host automatically.</p>
         </div>
         <Toggle checked={form.create_google_meet} onChange={(checked) => setForm((current) => ({ ...current, create_google_meet: checked }))} label="Create Google Meet" />
       </div>
+      {form.create_google_meet && googleStatus && !googleStatus.connected && (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4">
+          <div>
+            <p className="text-sm font-medium text-amber-900">Connect Google to create the real Meet link</p>
+            <p className="mt-0.5 text-sm text-amber-800">Without this, the meeting saves but has no working Google Meet link yet.</p>
+          </div>
+          <Button type="button" size="sm" variant="secondary" onClick={onConnectGoogle} disabled={connectGoogle.isPending}>
+            {connectGoogle.isPending ? "Redirecting…" : "Connect Google"}
+          </Button>
+        </div>
+      )}
+      {form.create_google_meet && googleStatus?.connected && (
+        <p className="flex items-center gap-1.5 text-sm text-emerald-700">
+          <Check className="h-4 w-4" /> Google connected as {googleStatus.email} — you'll be the meeting host.
+        </p>
+      )}
     </div>
   );
 }
@@ -297,6 +314,38 @@ export function CreateMeetingWizard() {
     ...(presetEnd ? { scheduled_end_at: presetEnd } : {}),
   });
   const [error, setError] = useState("");
+
+  const googleIntegration = useGoogleIntegration();
+  const connectGoogle = useConnectGoogle();
+
+  // Connecting Google mid-wizard bounces the whole browser to Google and
+  // back, which would otherwise lose everything typed so far — stash it
+  // right before leaving, restore it once we land back on this same route.
+  const DRAFT_KEY = "meeting-wizard-draft";
+  useEffect(() => {
+    if (searchParams.get("google_connected") === null) return;
+    try {
+      const raw = sessionStorage.getItem(DRAFT_KEY);
+      if (raw) {
+        const draft = JSON.parse(raw);
+        setStep(draft.step ?? 0);
+        setProjectId(draft.projectId ?? null);
+        setProjectName(draft.projectName ?? "");
+        setMemberIds(draft.memberIds ?? []);
+        setForm((current) => ({ ...current, ...draft.form }));
+      }
+    } catch {
+      // Corrupt/missing draft — just continue with a fresh wizard.
+    } finally {
+      sessionStorage.removeItem(DRAFT_KEY);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const onConnectGoogle = () => {
+    sessionStorage.setItem(DRAFT_KEY, JSON.stringify({ step, projectId, projectName, memberIds, form }));
+    connectGoogle.mutate("/meetings/new");
+  };
 
   useEffect(() => {
     if (preselectedProject) setProjectId(preselectedProject);
@@ -366,6 +415,11 @@ export function CreateMeetingWizard() {
         </p>
       </div>
       <Stepper step={step} />
+      {searchParams.get("google_connected") === "1" && (
+        <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2.5 text-sm text-emerald-800">
+          Google connected — pick up right where you left off.
+        </div>
+      )}
       {(selectedSummary.project || selectedSummary.people) && step > 0 && (
         <p className="text-sm text-ink-soft">
           {selectedSummary.project ? <>Project: <span className="font-medium text-ink">{selectedSummary.project}</span></> : "No project"}
@@ -389,7 +443,7 @@ export function CreateMeetingWizard() {
             onInvited={(id) => setMemberIds((current) => (current.includes(id) ? current : [...current, id]))}
           />
         )}
-        {step === 2 && <MeetingStep form={form} setForm={setForm} />}
+        {step === 2 && <MeetingStep form={form} setForm={setForm} googleStatus={googleIntegration.data} connectGoogle={connectGoogle} onConnectGoogle={onConnectGoogle} />}
         {error && <p className="mt-4 text-sm text-rose-600">{error}</p>}
       </Card>
 

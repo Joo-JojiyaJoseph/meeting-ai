@@ -1,11 +1,13 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { CalendarDays, Plus, Video } from "lucide-react";
+import { motion } from "framer-motion";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { EmptyCalendarIllustration } from "@/components/illustrations/EmptyIllustrations";
 import { formatDate, formatTime } from "@/lib/format";
 import { useMeetings } from "./api";
 
@@ -53,31 +55,42 @@ export function MeetingsPage() {
       {isLoading ? (
         <div className="space-y-3">{Array.from({ length: 4 }).map((_, index) => <Skeleton key={index} className="h-20 rounded-2xl" />)}</div>
       ) : data?.data?.length > 0 ? (
-        <div className="space-y-3">
+        <motion.div
+          className="space-y-3"
+          initial="hidden"
+          animate="show"
+          variants={{ show: { transition: { staggerChildren: 0.05 } } }}
+        >
           {data.data.map((meeting) => (
-            <Card key={meeting.id} className="flex flex-wrap items-center gap-4 p-4 hover:-translate-y-0.5">
-              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-brand-50 text-brand-600">
-                <CalendarDays className="h-5 w-5" />
-              </div>
-              <Link to={`/meetings/${meeting.id}`} className="min-w-0 flex-1">
-                <p className="truncate font-medium text-ink hover:text-brand-700">{meeting.title}</p>
-                <p className="mt-0.5 text-sm text-ink-soft">
-                  {formatDate(meeting.scheduled_start_at)} · {formatTime(meeting.scheduled_start_at)}
-                  {meeting.project ? ` · ${meeting.project.name}` : ""}
-                </p>
-              </Link>
-              <Badge tone={statusTone[meeting.status]}>{meeting.status.replace("_", " ")}</Badge>
-              {canJoin(meeting) && (
-                <Button variant="secondary" size="sm" onClick={() => navigate(`/meetings/${meeting.id}/join`)}>
-                  <Video className="h-4 w-4" /> Join
-                </Button>
-              )}
-            </Card>
+            <motion.div
+              key={meeting.id}
+              variants={{ hidden: { opacity: 0, y: 10 }, show: { opacity: 1, y: 0 } }}
+              transition={{ duration: 0.25 }}
+            >
+              <Card className="flex flex-wrap items-center gap-4 p-4 hover:-translate-y-0.5">
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-brand-500/10 text-brand-600">
+                  <CalendarDays className="h-5 w-5" />
+                </div>
+                <Link to={`/meetings/${meeting.id}`} className="min-w-0 flex-1">
+                  <p className="truncate font-medium text-ink hover:text-brand-700">{meeting.title}</p>
+                  <p className="mt-0.5 text-sm text-ink-soft">
+                    {formatDate(meeting.scheduled_start_at)} · {formatTime(meeting.scheduled_start_at)}
+                    {meeting.project ? ` · ${meeting.project.name}` : ""}
+                  </p>
+                </Link>
+                <Badge tone={statusTone[meeting.status]}>{meeting.status.replace("_", " ")}</Badge>
+                {canJoin(meeting) && (
+                  <Button variant="secondary" size="sm" onClick={() => navigate(`/meetings/${meeting.id}/join`)}>
+                    <Video className="h-4 w-4" /> Join
+                  </Button>
+                )}
+              </Card>
+            </motion.div>
           ))}
-        </div>
+        </motion.div>
       ) : (
         <EmptyState
-          icon={CalendarDays}
+          illustration={EmptyCalendarIllustration}
           title="No meetings yet"
           description="Start with a project and members, then schedule a Google Meet that opens inside this app."
           action={<Button onClick={() => navigate("/meetings/new")}><Plus className="h-4 w-4" /> Schedule meeting</Button>}

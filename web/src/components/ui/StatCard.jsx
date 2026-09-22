@@ -2,9 +2,9 @@ import { motion } from "framer-motion";
 import { Card } from "./Card";
 
 const iconTone = {
-  brand: "bg-brand-50 text-brand-600",
-  info: "bg-sky-50 text-info-500",
-  warning: "bg-amber-50 text-amber-600",
+  brand: "bg-brand-500/10 text-brand-600",
+  info: "bg-info-500/10 text-info-500",
+  warning: "bg-amber-500/10 text-amber-600",
 };
 
 export function StatCard({ label, value, icon: Icon, tone = "brand", index = 0 }) {

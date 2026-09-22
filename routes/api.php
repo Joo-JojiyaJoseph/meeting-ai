@@ -15,6 +15,7 @@ use App\Http\Controllers\Api\V1\MeetingArtifactController;
 use App\Http\Controllers\Api\V1\MeetingController;
 use App\Http\Controllers\Api\V1\MeetingIntelligenceController;
 use App\Http\Controllers\Api\V1\MeetingJoinController;
+use App\Http\Controllers\Api\V1\MeetingNoteController;
 use App\Http\Controllers\Api\V1\MeetingParticipantController;
 use App\Http\Controllers\Api\V1\MeetingProcessingController;
 use App\Http\Controllers\Api\V1\MeetingActionItemController;
@@ -147,6 +148,12 @@ Route::prefix('v1')->group(function () {
         Route::get('meetings/{meeting}/actions', [MeetingIntelligenceController::class, 'actionItems']);
         Route::get('meetings/{meeting}/mom', [MeetingIntelligenceController::class, 'mom']);
         Route::get('meetings/{meeting}/brief', [MeetingBriefController::class, 'show']);
+
+        // Manual in-meeting notes — independent of AI processing/Meet artifact polling
+        Route::get('meetings/{meeting}/notes', [MeetingNoteController::class, 'index']);
+        Route::post('meetings/{meeting}/notes', [MeetingNoteController::class, 'store']);
+        Route::patch('meetings/{meeting}/notes/{note}', [MeetingNoteController::class, 'update']);
+        Route::delete('meetings/{meeting}/notes/{note}', [MeetingNoteController::class, 'destroy']);
 
         // Action item management → task conversion (§25)
         Route::patch('meetings/{meeting}/actions/{actionItem}', [MeetingActionItemController::class, 'update']);

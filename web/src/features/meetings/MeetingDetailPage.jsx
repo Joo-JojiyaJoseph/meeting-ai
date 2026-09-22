@@ -15,11 +15,11 @@ import { ActionItemsTab } from "./tabs/ActionItemsTab";
 import { MomTab } from "./tabs/MomTab";
 import { MeetingBriefCard } from "./MeetingBriefCard";
 import { MeetingIntelRail } from "./MeetingIntelRail";
+import { MeetingNotesPanel } from "./MeetingNotesPanel";
 import { ShareMeetingModal } from "./ShareMeetingModal";
-import { WaitingRoomPanel } from "./WaitingRoomPanel";
 import { downloadIcs, meetingToIcs } from "@/lib/ics";
 
-const TABS = ["Overview", "Brief", "Transcript", "Summary", "Decisions", "Action Items", "MoM"];
+const TABS = ["Overview", "Notes", "Brief", "Transcript", "Summary", "Decisions", "Action Items", "MoM"];
 
 export function MeetingDetailPage() {
   const { id = "" } = useParams();
@@ -92,14 +92,13 @@ export function MeetingDetailPage() {
 
     {actionError && <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">{actionError}</div>}
 
-    <WaitingRoomPanel meetingId={id} />
-
     <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1fr_320px]">
       <div className="min-w-0 space-y-6">
         <div className="flex gap-1 overflow-x-auto rounded-xl bg-slate-100/80 p-1">{TABS.map((item) => <button key={item} onClick={() => setTab(item)} className={`focus-ring whitespace-nowrap rounded-lg px-3 py-2 text-sm font-medium transition-all ${tab === item ? "bg-surface text-brand-700 shadow-sm" : "text-ink-soft hover:text-ink"}`}>{item}</button>)}</div>
         {processing && <AiProcessingStatus status={processing} onRetry={process} />}
         {tab === "Overview" && <div className="space-y-5"><div className="rounded-2xl border border-line/80 bg-surface p-5 shadow-card"><h2 className="font-display text-lg font-semibold text-ink">Details</h2><dl className="mt-4 grid gap-4 sm:grid-cols-2"><div><dt className="text-sm text-ink-soft">Organizer</dt><dd className="font-medium text-ink">{meeting.organizer?.name || "—"}</dd></div><div><dt className="text-sm text-ink-soft">Language</dt><dd className="font-medium text-ink">{meeting.primary_language}</dd></div><div><dt className="text-sm text-ink-soft">Participants</dt><dd className="font-medium text-ink">{meeting.participants_count ?? meeting.participants?.length ?? 0}</dd></div><div><dt className="text-sm text-ink-soft">Project</dt><dd className="font-medium text-ink">{meeting.project?.name || "—"}</dd></div></dl></div><MeetingBriefCard meetingId={id} /></div>}
         {tab === "Brief" && <MeetingBriefCard meetingId={id} />}
+        {tab === "Notes" && <MeetingNotesPanel meetingId={id} />}
         {tab === "Transcript" && <TranscriptTab meetingId={id} />}
         {tab === "Summary" && <SummaryTab meetingId={id} />}
         {tab === "Decisions" && <DecisionsTab meetingId={id} />}

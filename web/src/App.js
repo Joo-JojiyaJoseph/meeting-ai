@@ -4,6 +4,7 @@ import { createBrowserRouter, Navigate, RouterProvider } from "react-router-dom"
 import { AppLayout } from "@/components/layout/AppLayout";
 import { ProtectedRoute } from "@/routes/ProtectedRoute";
 import { LoginPage } from "@/features/auth/LoginPage";
+import { GoogleConnectCallbackPage } from "@/features/auth/GoogleConnectCallbackPage";
 import { JoinMeetingPage, EnterJoinCodePage } from "@/features/join/JoinMeetingPage";
 import { DashboardPage } from "@/features/dashboard/DashboardPage";
 import { MeetingsPage } from "@/features/meetings/MeetingsPage";
@@ -27,6 +28,7 @@ function Lazy({ children }) {
 }
 const router = createBrowserRouter([
     { path: "/login", element: _jsx(LoginPage, {}) },
+    { path: "/auth/google/callback", element: _jsx(GoogleConnectCallbackPage, {}) },
     { path: "/join", element: _jsx(EnterJoinCodePage, {}) },
     { path: "/join/:shareCode", element: _jsx(JoinMeetingPage, {}) },
     {
